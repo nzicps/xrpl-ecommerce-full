@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: xrpl-ecommerce
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: cargo_ecommerce.settings
+      - key: CELERY_BROKER_URL
+        value: redis://localhost:6379/0
+      - key: CELERY_RESULT_BACKEND
+        value: redis://localhost:6379/0
