@@ -1,13 +1,63 @@
-# Auto-switch startup command based on SERVICE variable
-CMD ["sh", "-c", "\
-if [ \"$SERVICE\" = 'celery' ]; then \
-  celery -A cargo_ecommerce worker --loglevel=info; \
-elif [ \"$SERVICE\" = 'beat' ]; then \
-  celery -A cargo_ecommerce beat --loglevel=info; \
-elif [ \"$SERVICE\" = 'flower' ]; then \
-  celery -A cargo_ecommerce flower --port=5555 --basic_auth=admin:admin123; \
-elif [ \"$SERVICE\" = 'node' ]; then \
-  cd /app/web2-blockchain-middleware && npm start; \
-else \
-  python /app/cargo_ecommerce/manage.py runserver 0.0.0.0:8000; \
-fi"]
+﻿services:
+  - type: web
+    name: cargo-django
+    env: docker
+    plan: starter
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: SERVICE
+        value: web
+      - key: DJANGO_SETTINGS_MODULE
+        value: cargo_ecommerce.settings
+      - key: CELERY_BROKER_URL
+        value: redis://cargo-redis:6379/0
+      - key: CELERY_RESULT_BACKEND
+        value: redis://cargo-redis:6379/0
+
+  - type: pserv
+    name: cargo-redis
+    env: docker
+    dockerCommand: redis-server
+    plan: starter
+
+  - type: worker
+    name: cargo-celery
+    env: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: SERVICE
+        value: celery
+      - key: CELERY_BROKER_URL
+        value: redis://cargo-redis:6379/0
+      - key: CELERY_RESULT_BACKEND
+        value: redis://cargo-redis:6379/0
+
+  - type: worker
+    name: cargo-celery-beat
+    env: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: SERVICE
+        value: beat
+      - key: CELERY_BROKER_URL
+        value: redis://cargo-redis:6379/0
+      - key: CELERY_RESULT_BACKEND
+        value: redis://cargo-redis:6379/0
+
+  - type: web
+    name: cargo-flower
+    env: docker
+    plan: starter
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: SERVICE
+        value: flower
+
+  - type: web
+    name: cargo-node
+    env: docker
+    plan: starter
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: SERVICE
+        value: node
